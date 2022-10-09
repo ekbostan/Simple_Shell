@@ -6,10 +6,15 @@
 #include <errno.h>
 
 #define CMDLINE_MAX 512
-void cdFunction(char* dirFiles){
-	if(chdir(dirFiles)!=0)
+
+int arrsize = 0;
+
+int cdFunction(char* dirFiles){
+	if(chdir(dirFiles)!=0){
 		fprintf(stderr,"Error: cannot cd into directory\n");
-}
+		return 1;}
+return 0;
+	}
 int findpipe(char* userInput)
 {
     char* ret;
@@ -30,9 +35,9 @@ int findpipe(char* userInput)
 char **spaceRemover(char* strCmd)
 {
 	int bufferSize = CMDLINE_MAX;
-	int posIndex = 0;
 	char **tokenArray= malloc(bufferSize * sizeof(char*));
 	char *indivToken;
+	 int posIndex=0;	
 	char* delim = " ";
 	char* dupCmd;
 	dupCmd = strdup(strCmd);
@@ -47,25 +52,26 @@ char **spaceRemover(char* strCmd)
 		indivToken = strtok(NULL,delim);
 	}
 	tokenArray[posIndex] = NULL;
+	arrsize = posIndex;
 	return tokenArray;
 }
 char* gnu_getcwd(){
-size_t size = 100;
-while (1)
-    {
-      char *buffer = malloc(sizeof(char*)*size);
-      if (getcwd (buffer, size) == buffer)
-        return buffer;
-      free (buffer);
-      if (errno != ERANGE)
-        return 0;
-      size *= 2;
-    }
-}
+	size_t size = 100;
+	while (1)
+   	 {
+  	 	char *buffer = malloc(sizeof(char*)*size);
+     		 if (getcwd (buffer, size) == buffer)
+       			 return buffer;
+     		 free (buffer);
+     		 if (errno != ERANGE)
+       		 return 0;
+     		 size *= 2;
+   		 }
+	}
 void pwdFunction(){
-char* dirPath = NULL;
-dirPath = gnu_getcwd();
-printf("%s\n", dirPath);
+	char* dirPath = NULL;
+	dirPath = gnu_getcwd();
+	printf("%s\n", dirPath);
 }
 int main(void)
 {
@@ -97,13 +103,20 @@ int main(void)
                 /* Builtin command */
                 if (!strcmp(cmd, "exit")) {
                         fprintf(stderr, "Bye...\n");
+			int status =0;
+                        printf("+ completed '%s' [%d]\n",cmd,
+                                WEXITSTATUS(status));
                         break;
                 }
 		if(!strcmp(cmd,"pwd")){
 			pwdFunction();
+			 int status = 0;
+                        printf("+ completed '%s' [%d]\n",cmd,
+                                WEXITSTATUS(status));
 			continue;
 
 		}
+
 
 		int cmdType = findpipe(cmd);
 		 if(cmdType == 1)
@@ -118,33 +131,35 @@ int main(void)
        		 if(cmdType == 3 )
        		 {
            		args =spaceRemover(cmd);
-			if(!strcmp(args[0],"cd")){	               		cdFunction(args[1]);
-			int status;
-                        waitpid(pid, &status,0);
-                        printf("+ completed '%s' [%d]\n",cmd,
-                                WEXITSTATUS(status));
-		 	continue;	
-		
-		
+			if(arrsize > 16){
+			fprintf(stderr,"Error: too many process arguments\n");
+			continue;
 			}
+			if(!strcmp(args[0],"cd")){
+				 int status = cdFunction(args[1]);		
+				printf("+ completed '%s' [%d]\n",cmd,status);
+                        
+		 		continue;	
+		
+               		 }
+		
 
-
-		 pid = fork();
-                if(pid == 0) {
+			 pid = fork();
+               		 if(pid == 0) {
                         /* Child*/
-                        execvp(args[0],args);
-                        perror("execvp");
-                        exit(1);
-                } else if (pid > 0){
-                        /* Parent */
-                        int status;
-                        waitpid(pid, &status,0);
-                        printf("+ completed '%s' [%d]\n",cmd,
+                       		 execvp(args[0],args);
+                       		fprintf (stderr,"Error: Command not found\n");
+                       		 exit(1);
+               		 } else if (pid > 0){
+                       		 /* Parent */
+                        	int status;
+                       		 waitpid(pid, &status,0);
+                        	printf("+ completed '%s' [%d]\n",cmd,
                                 WEXITSTATUS(status));
-                } else {
-                        perror("fork");
-                        exit(1);
-                }
+                	} else {
+                        	perror("fork");
+                       		 exit(1);
+                		}
 
        		 }
 
