@@ -4,6 +4,10 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <errno.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+
 
 #define CMDLINE_MAX 512
 
@@ -28,6 +32,12 @@ int findpipe(char* userInput)
     {
         return 2 ;/* Returns 2 if its a redirect*/
     }
+   ret = memchr(userInput, '<', strlen(userInput));
+    if (ret != NULL)
+    {
+        return 4 ;/* Returns 2 if its a redirect*/
+    }
+
     else 
     return 3 ; /* Returns 3 if its built-in cmd*/
 
@@ -55,6 +65,31 @@ char **spaceRemover(char* strCmd)
 	arrsize = posIndex;
 	return tokenArray;
 }
+char **redirectHandler(char* strCmd)
+{
+        int bufferSize = CMDLINE_MAX;
+        char **tokenArray= malloc(bufferSize * sizeof(char*));
+        char *indivToken;
+         int posIndex=0;
+        char* delim = " ,>";
+        char* dupCmd;
+        dupCmd = strdup(strCmd);
+        if (tokenArray == NULL){
+        perror("malloc");
+        exit(2);
+                        }
+        indivToken = strtok(dupCmd,delim);
+        while(indivToken !=NULL){
+                tokenArray[posIndex] = indivToken;
+                posIndex++;
+                indivToken = strtok(NULL,delim);
+        }
+        tokenArray[posIndex] = NULL;
+        arrsize = posIndex;
+        return tokenArray;
+}
+
+
 char* gnu_getcwd(){
 	size_t size = 100;
 	while (1)
@@ -125,9 +160,50 @@ int main(void)
        		 }
        		 if (cmdType == 2)
        		 {
-           		 printf("2");
+           		args = spaceRemover(cmd);
 
-       		}
+			if(*args[0] == '>')
+			{
+			fprintf(stderr,"Error: missing command\n");
+			continue;
+			}
+
+			if(*args[arrsize-1] == '>')
+			{
+			fprintf(stderr,"Error: no output file\n");
+			continue;
+			}
+
+			 args = redirectHandler(cmd);
+			
+			int fd;
+ 			if ((fd = open(args[arrsize-1],O_WRONLY | O_CREAT |O_TRUNC , 0644)) == -1){   
+                                fprintf(stderr,"Error: cannot open output file\n");
+                                continue;}
+
+			 pid = fork();
+                         if(pid == 0) {
+	
+
+				dup2(fd, STDOUT_FILENO);
+				close(fd);
+				args[arrsize-1] = '\0';
+				execvp(args[0],args);
+                                fprintf (stderr,"Error: Command not found\n");
+                                 exit(1);
+
+
+       		} else if (pid > 0){
+                                 /* Parent */
+                                int status;
+                                 waitpid(pid, &status,0);
+                                printf("+ completed '%s' [%d]\n",cmd,
+                                WEXITSTATUS(status));
+                        } else {
+                                perror("fork");
+                                 exit(1);
+                                }
+		 }
        		 if(cmdType == 3 )
        		 {
            		args =spaceRemover(cmd);
