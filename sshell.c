@@ -252,8 +252,6 @@ int main(void)
 			 {
 				fprintf(stderr,"Error: missing command\n");
                                  continue;
-
-			
 			 }
                          Pipe(firstPipe,secondPipe,cmd);
        		 }
@@ -282,11 +280,9 @@ int main(void)
                                 fprintf(stderr,"Error: cannot open output file\n");
                                 continue;
 			}
-
 			 pid = fork();
                          if(pid == 0) 
 			 {
-
 				dup2(fd, STDOUT_FILENO);
 				close(fd);
 				args[arrsize-1] = NULL;
