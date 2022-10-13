@@ -9,12 +9,10 @@
 
 #define CMDLINE_MAX 512
 
-
 int arrsize = 0;
 
 void Pipe(char** firstPipe, char** secondPipe,char* cmd)
 {
-
         int pipes[2];
         int status1;
         pid_t p1,p2;
@@ -46,13 +44,10 @@ void Pipe(char** firstPipe, char** secondPipe,char* cmd)
 
                 else if (p2 != 0)
                 {
-
                         waitpid(p1, &status1,0);
                         //waitpid(p2, &status2,0);
                         printf("+ completed '%s' [%d][%d]\n",cmd,
                         WEXITSTATUS(status1), WEXITSTATUS(status1));
-                        
-
                 }
 
 
@@ -71,15 +66,12 @@ void pipespaceRommever(char* parsedPipes,char** firstPipe){
 		indivToken = strtok(NULL,delim);
 	}
 	firstPipe[parsedPipecounter] = NULL;
-
-
 }
 
 void pipeParser(char** parsedPipes, char* cmd )
 {
         char* dupCmd;
         dupCmd = strdup(cmd);
-
         int parseCounter = 0;
         for (parseCounter = 0; parseCounter < 2; parseCounter++)
         {
@@ -87,17 +79,17 @@ void pipeParser(char** parsedPipes, char* cmd )
                 if(parsedPipes[parseCounter] == NULL)
                 break;       
         }
-
-
 }
 
-
-int cdFunction(char* dirFiles){
-	if(chdir(dirFiles)!=0){
-		fprintf(stderr,"Error: cannot cd into directory\n");
-		return 1;}
-return 0;
+int cdFunction(char* dirFiles)
+{
+	if(chdir(dirFiles)!=0)
+	{
+	fprintf(stderr,"Error: cannot cd into directory\n");
+	return 1;
 	}
+return 0;
+}
 int findpipe(char* userInput)
 {
     char* ret;
@@ -116,10 +108,8 @@ int findpipe(char* userInput)
     {
         return 4 ;/* Returns 2 if its a redirect*/
     }
-
     else 
     return 3 ; /* Returns 3 if its built-in cmd*/
-
 }
 char **spaceRemover(char* strCmd)
 {
@@ -150,7 +140,7 @@ char **redirectHandler(char* strCmd)
         char **tokenArray= malloc(bufferSize * sizeof(char*));
         char *indivToken;
         int posIndex=0;
-        char* delim = " ,> <";
+        char* delim = " > <";
         char* dupCmd;
         dupCmd = strdup(strCmd);
         if (tokenArray == NULL){
@@ -167,9 +157,8 @@ char **redirectHandler(char* strCmd)
         arrsize = posIndex;
         return tokenArray;
 }
-
-
-char* gnu_getcwd(){
+char* gnu_getcwd()
+{
 	size_t size = 100;
 	while (1)
    	 {
@@ -180,9 +169,10 @@ char* gnu_getcwd(){
      		 if (errno != ERANGE)
        		 return 0;
      		 size *= 2;
-   		 }
-	}
-void pwdFunction(){
+   	}
+}
+void pwdFunction()
+{
 	char* dirPath = NULL;
 	dirPath = gnu_getcwd();
 	printf("%s\n", dirPath);
@@ -197,17 +187,13 @@ int main(void)
         char cmd[CMDLINE_MAX];
 	pid_t pid;
         while (1) {
-
                 char *nl;
                 /*int retval;*/
-
                 /* Print prompt */
                 printf("sshell$ ");
                 fflush(stdout);
-
                 /* Get command line */
                 fgets(cmd, CMDLINE_MAX, stdin);
-
                 /* Print command line if stdin is not provided by terminal */
                 if (!isatty(STDIN_FILENO)) {
                         printf("%s", cmd);
@@ -236,175 +222,198 @@ int main(void)
 
 		}
 
-
 		int cmdType = findpipe(cmd);
 		 if(cmdType == 1)
         	{
-           		 
+			args = spaceRemover(cmd);
+           		 if(*args[0] == '|')
+			 {
+			 fprintf(stderr,"Error: missing command\n");
+			 continue;		 
+			}
+			 char* ret;
+   			 ret = memchr(cmd, '>', strlen(cmd));
+   			 if (ret != NULL)
+  			  {
+  			  	 fprintf(stderr,"Error: mislocated output redirection\n");
+                        	 continue;
+ 			   }
+			 char* ret1;
+                         ret1 = memchr(cmd, '<', strlen(cmd));
+                         if (ret1 != NULL)
+                          {
+                                 fprintf(stderr,"Error: mislocated input redirection\n");
+                                 continue;
+			  }
                          pipeParser(parsedPipes,cmd);
                          pipespaceRommever(parsedPipes[0],firstPipe);
                          pipespaceRommever(parsedPipes[1],secondPipe);
-                         Pipe(firstPipe,secondPipe,cmd);
-                         
+			 if(secondPipe[0] == NULL )
+			 {
+				fprintf(stderr,"Error: missing command\n");
+                                 continue;
 
+			
+			 }
+                         Pipe(firstPipe,secondPipe,cmd);
        		 }
        		 if (cmdType == 2)
        		 {
            		args = spaceRemover(cmd);
-			 if(arrsize > 16){
-                        fprintf(stderr,"Error: too many process arguments\n");
-                        continue;
+			if(arrsize > 16)
+			{
+                        	fprintf(stderr,"Error: too many process arguments\n");
+                        	continue;
                         }
-
-
 			if(*args[0] == '>')
 			{
-			fprintf(stderr,"Error: missing command\n");
-			continue;
+				fprintf(stderr,"Error: missing command\n");
+				continue;
 			}
-
 			if(*args[arrsize-1] == '>')
 			{
-			fprintf(stderr,"Error: no output file\n");
-			continue;
+				fprintf(stderr,"Error: no output file\n");
+				continue;
+			}
+			args = redirectHandler(cmd);
+			int fd;
+ 			if ((fd = open(args[arrsize-1],O_WRONLY | O_CREAT |O_TRUNC , 0644)) == -1)
+			{   
+                                fprintf(stderr,"Error: cannot open output file\n");
+                                continue;
 			}
 
-			 args = redirectHandler(cmd);
-			
-			int fd;
- 			if ((fd = open(args[arrsize-1],O_WRONLY | O_CREAT |O_TRUNC , 0644)) == -1){   
-                                fprintf(stderr,"Error: cannot open output file\n");
-                                continue;}
-
 			 pid = fork();
-                         if(pid == 0) {
-	
+                         if(pid == 0) 
+			 {
 
 				dup2(fd, STDOUT_FILENO);
 				close(fd);
 				args[arrsize-1] = NULL;
 				execvp(args[0],args);
                                 fprintf (stderr,"Error: Command not found\n");
-                                 exit(1);
-
-
-       		} else if (pid > 0){
-                                 /* Parent */
+                                exit(1);
+       			} 
+			else if (pid > 0)
+			{
+                                /* Parent */
                                 int status;
-                                 waitpid(pid, &status,0);
+                                waitpid(pid, &status,0);
                                 printf("+ completed '%s' [%d]\n",cmd,
                                 WEXITSTATUS(status));
-                        } else {
+                        } 
+			else 
+			{
                                 perror("fork");
                                  exit(1);
-                                }
+                         }
 		 }
 
 		if (cmdType == 4)
 		{
-
 			args = spaceRemover(cmd);
-
-			 if(arrsize > 16){
-                        fprintf(stderr,"Error: too many process arguments\n");
-                        continue;
+			if(arrsize > 16)
+			{
+                        	fprintf(stderr,"Error: too many process arguments\n");
+                        	continue;
                         }
-
-
                         if(*args[0] == '<')
                         {
-                        fprintf(stderr,"Error: missing command\n");
-                        continue;
+                        	fprintf(stderr,"Error: missing command\n");
+                        	continue;
                         }
 
-                       
-			
-			
+                       if(*args[arrsize-1] == '<')
+                       {
 
-			args = redirectHandler(cmd);
-
-                        int fd;
-			if(!strcmp(args[0],"grep")){
-                        if ((fd = open(args[2],O_WRONLY , 0644)) == -1){
-                                fprintf(stderr,"Error: cannot open input file\n");
-                                continue;}
+                        	fprintf(stderr,"Error: no input file\n");
+                                continue;
 			}
-			if ((fd = open(args[1],O_WRONLY , 0644)) == -1){
+			args = redirectHandler(cmd);
+                        int fd;
+			if(!strcmp(args[0],"grep"))
+			{
+                        	if ((fd = open(args[2],O_WRONLY , 0644)) == -1)
+				{
+                                	fprintf(stderr,"Error: cannot open input file\n");
+                                	continue;
+				}
+			}
+
+			if ((fd = open(args[1],O_WRONLY , 0644)) == -1)
+			{
                                 fprintf(stderr,"Error: cannot open input file\n");
-                                continue;}
+                                continue;
+			}
 
                          pid = fork();
-                         if(pid == 0) {
-
-
+                         if(pid == 0) 
+			 {
                                 dup2(fd, STDIN_FILENO);
                                 close(fd);
                                 execvp(args[0],args);
                                 fprintf (stderr,"Error: Command not found\n");
                                  exit(1);
-
-
-                } else if (pid > 0){
-                                 /* Parent */
+                	} 
+			else if (pid > 0)
+			{
+                                /* Parent */
                                 int status;
-                                 waitpid(pid, &status,0);
+                                waitpid(pid, &status,0);
                                 printf("+ completed '%s' [%d]\n",cmd,
                                 WEXITSTATUS(status));
-                        } else {
+                        } 
+			else 
+			{
                                 perror("fork");
                                  exit(1);
-                                }
-
-
-
-
+                         }
 		}
-
-
 
        		 if(cmdType == 3 )
        		 {
            		args =spaceRemover(cmd);
-			if(arrsize > 16){
-			fprintf(stderr,"Error: too many process arguments\n");
-			continue;
+			if(arrsize > 16)
+			{
+				fprintf(stderr,"Error: too many process arguments\n");
+				continue;
 			}
-			if(!strcmp(args[0],"cd")){
-				 int status = cdFunction(args[1]);		
+			if(!strcmp(args[0],"cd"))
+			{
+				int status = cdFunction(args[1]);		
 				printf("+ completed '%s' [%d]\n",cmd,status);
-                        
 		 		continue;	
 		
                		 }
 
 
-			if(!strcmp(args[0]," ")){	 	
+			if(!strcmp(args[0]," "))
+			{	 	
 				fprintf (stderr,"Error: Command not found\n");
                        		exit(1);
-			
-		
                		 }
-
 			 pid = fork();
-               		 if(pid == 0) {
-                        /* Child*/
-                       		 execvp(args[0],args);
+               		 if(pid == 0) 
+			 {
+                        	/* Child*/
+                       		execvp(args[0],args);
                        		fprintf (stderr,"Error: Command not found\n");
-                       		 exit(1);
-               		 } else if (pid > 0){
-                       		 /* Parent */
+                       		exit(1);
+               		 } 
+			 else if (pid > 0)
+			 {
+                       		/* Parent */
                         	int status;
-                       		 waitpid(pid, &status,0);
+                       		waitpid(pid, &status,0);
                         	printf("+ completed '%s' [%d]\n",cmd,
                                 WEXITSTATUS(status));
-                	} else {
+                	} 
+			else 
+			{
                         	perror("fork");
                        		 exit(1);
-                		}
-
+                	}
        		 }
-
-
         }
 
         return EXIT_SUCCESS;
