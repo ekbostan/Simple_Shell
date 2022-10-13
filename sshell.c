@@ -231,20 +231,6 @@ int main(void)
 			 fprintf(stderr,"Error: missing command\n");
 			 continue;		 
 			}
-			 char* ret;
-   			 ret = memchr(cmd, '>', strlen(cmd));
-   			 if (ret != NULL)
-  			  {
-  			  	 fprintf(stderr,"Error: mislocated output redirection\n");
-                        	 continue;
- 			   }
-			 char* ret1;
-                         ret1 = memchr(cmd, '<', strlen(cmd));
-                         if (ret1 != NULL)
-                          {
-                                 fprintf(stderr,"Error: mislocated input redirection\n");
-                                 continue;
-			  }
                          pipeParser(parsedPipes,cmd);
                          pipespaceRommever(parsedPipes[0],firstPipe);
                          pipespaceRommever(parsedPipes[1],secondPipe);
