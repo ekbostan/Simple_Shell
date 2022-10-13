@@ -215,7 +215,7 @@ int main(void)
                 }
 		if(!strcmp(cmd,"pwd")){
 			pwdFunction();
-			 int status = 0;
+			 int status;
                         printf("+ completed '%s' [%d]\n",cmd,
                                 WEXITSTATUS(status));
 			continue;
