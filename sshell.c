@@ -242,7 +242,8 @@ int main(void)
                          Pipe(firstPipe,secondPipe,cmd);
        		 }
        		 if (cmdType == 2)
-       		 {
+       		 { // On a command line, redirection is the process of using the input/output 
+			 //of a file or command to use it as an input for another file. 
            		args = spaceRemover(cmd);
 			if(arrsize > 16)
 			{
